@@ -29,27 +29,34 @@ const SALARY_TABLE = {
 
 // 初期化処理
 document.addEventListener('DOMContentLoaded', () => {
+
+    // 一覧表示 (最初は全員)
     renderTable();
 
-    // --- 1. 部署フィルターのイベント処理 ---
+    // TODO: 部署フィルターのイベント処理を実装する
+    // 1. select要素を取得
     const departmentFilter = document.getElementById('department-filter');
+    // 2. changeイベントを監視
+    // 3. 選択された部署でemployeesをfilterする
+    // 4. filterした配列をrenderTableに渡して再描画
     departmentFilter.addEventListener('change', (e) => {
-        const selectedDept = e.target.value; // 選択された値を取得
-
-        if (selectedDept === "") {
+        const selectedValue = e.target.value;
+        if (selectedValue === '') {
             renderTable(employees);
         } else {
-            // 選択された部署に一致する社員を抽出
-            const filtered = employees.filter(emp => emp.department === selectedDept);
-            renderTable(filtered);
+            const filterValue = employees.filter(employee => employee.department === selectedValue);
+            renderTable(filterValue);
         }
     });
 
-    // モーダル閉じるボタン
+
+
+    // モーダル閉じるボタンのイベント設定（未実装）
     const dialog = document.getElementById('detail-modal');
     const closeBtn = document.getElementById('close-modal-btn');
     if (closeBtn) {
         closeBtn.addEventListener('click', () => {
+            // TODO: モーダルを閉じる処理を実装する
             dialog.close();
         });
     }
@@ -57,87 +64,113 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /**
  * 社員一覧テーブルを描画する
+ * @param {Array} list - 表示する社員リスト (引数がない場合は全社員)
  */
 function renderTable(list = employees) {
     const listBody = document.getElementById('employee-list');
     listBody.innerHTML = '';
 
-    list.forEach((employee) => {
-        // 各社員ごとに年齢を計算
-        const age = calculateAge(employee.birthDate);
+    // TODO: 引数で受け取ったlist配列をループして、テーブルに行を追加する処理を実装する
+    // calculateAge関数を使って年齢を表示すること
+    // 詳細ボタンには onclick="showDetail(社員ID)" を設定すること
+    list.forEach(employee => {
+        const ageResult = calculateAge(employee.birthDate);
 
-        let trElm = document.createElement('tr');
-        trElm.innerHTML = `
-      <td>${employee.id}</td>
-      <td>${employee.name.last} ${employee.name.first}</td>
-      <td>${employee.department}</td>
-      <td>${age} 歳</td>
-      <td><button class="btn btn-primary btn-sm" onclick="showDetail(${employee.id})">詳細</button></td>
-    `;
-        listBody.appendChild(trElm);
+        const trList = document.createElement('tr');
+        trList.innerHTML = `
+        <td>${employee.id}</td>
+        <td>${employee.name.last}${employee.name.first}</td>
+        <td>${employee.department}</td>
+        <td>${ageResult}歳</td>
+        <td class="btn btn-primary btn-sm" onclick="showDetail(${employee.id})">詳細</td>
+        `;
+        listBody.appendChild(trList);
     });
 }
 
+
 /**
  * 詳細モーダルを表示する
+ * @param {number} id - 社員ID
  */
 function showDetail(id) {
+    // TODO: 以下の処理を実装する
+    // 1. 引数のidと一致する社員データをemployees配列から検索する
     const dialog = document.getElementById('detail-modal');
-    // 1. 社員検索
-    const emp = employees.find(e => e.id === id);
-    if (!emp) return;
+    const targetId = employees.find(employee => employee.id === id);
 
-    // 2. データのセット
-    // 画像がない場合のフォールバック処理
-    document.getElementById('modal-image').src = emp.image ? `./images/${emp.image}` : './images/no-image.jpg';
-    document.getElementById('modal-id').innerText = emp.id;
-    document.getElementById('modal-name').innerText = `${emp.name.last} ${emp.name.first}`;
+    // 2. 検索した社員データをモーダル内の各HTML要素にセットする
+    //    - 名前、部署、生年月日など
+    //    - 年齢は calculateAge関数で計算
+    //    - 総支給額は calculateTotalSalary関数で計算
+    //    - 資格リストはループしてliタグを生成
 
-    const age = calculateAge(emp.birthDate);
-    document.getElementById('modal-birth').innerText = emp.birthDate;
-    document.getElementById('modal-age').innerText = `${age}`;
-    document.getElementById('modal-dept').innerText = emp.department;
-
-    // 資格リストの生成
-    const licenseList = document.getElementById('modal-licenses');
-    licenseList.innerHTML = ''; // 一度空にする
-    if (emp.licenses.length > 0) {
-        emp.licenses.forEach(l => {
-            const li = document.createElement('li');
-            li.innerText = l;
-            licenseList.appendChild(li);
+    //社員画像
+    document.getElementById('modal-image').src = targetId.image ? `./images/${targetId.image}` : `./images/default.png`;
+    //社員番号
+    document.getElementById('modal-id').innerText = targetId.id;
+    //氏名
+    document.getElementById('modal-name').innerText = `${targetId.name.last} ${targetId.name.first}`;
+    //生年月日
+    document.getElementById('modal-birth').innerText = targetId.birthDate;
+    const ageResult = calculateAge(targetId.birthDate);
+    document.getElementById('modal-age').innerText = ageResult;
+    //部署
+    document.getElementById('modal-dept').innerText = targetId.department;
+    //保有資格
+    const licensesList = document.getElementById('modal-licenses');
+    licensesList.innerHTML = '';
+    if (targetId.licenses.length > 0) {
+        targetId.licenses.forEach(license => {
+            const liElm = document.createElement('li');
+            liElm.textContent = license;
+            licensesList.appendChild(liElm);
         });
     } else {
-        licenseList.innerHTML = '<li>なし</li>';
+        licensesList.innerHTML = '<li>なし</li>';
     }
 
-    // 給与計算
-    const totalSalary = calculateTotalSalary(emp.basicSalary, emp.licenses.length);
+    //総支給額
+    const totalSalary = calculateTotalSalary(targetId.basicSalary, targetId.licenses.length);
     document.getElementById('modal-salary').innerText = `¥${totalSalary.toLocaleString()}`;
 
-    // 3. 表示
+    // 3. モーダルを表示する (dialog.showModal())
     dialog.showModal();
 }
 
+
 /**
  * 年齢を計算する
- */
+ * @param {string} birthDateString - YYYY-MM-DD
+ * @returns {number} 年齢
+*/
 function calculateAge(birthDateString) {
+    // TODO: 生年月日から現在の年齢を計算して返す
     const today = new Date();
-    const birthDate = new Date(birthDateString);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    const birthday = new Date(birthDateString);
+    let age = today.getFullYear() - birthday.getFullYear();
+    let month = today.getMonth - birthday.getMonth;
+    if (0 > month || (month === 0 && birthday.Date() > today.getDate())) {
         age--;
     }
     return age;
 }
 
+
+
+
 /**
  * 総支給額を計算する
+ * @param {number} grade - 基本給グレード (1-5)
+ * @param {number} licenseCount - 資格数
+ * @returns {number} 総支給額
  */
 function calculateTotalSalary(grade, licenseCount) {
-    const basic = SALARY_TABLE[grade] || 0;
-    const allowance = licenseCount * 5000; // 資格手当
-    return basic + allowance;
+    // TODO: 以下の計算式で支給額を求めて返す
+    // 基本給 = SALARY_TABLEからgradeに対応する金額を取得
+    const baseSalary = SALARY_TABLE[grade];
+    // 資格手当 = licenseCount * 5000
+    const licenseSalary = licenseCount * 5000;
+    // 総支給額 = 基本給 + 資格手当
+    return totalSalary = baseSalary + licenseSalary;
 }
